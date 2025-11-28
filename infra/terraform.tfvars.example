@@ -1,0 +1,44 @@
+# AI Agent - Terraform Variables
+# AWS Configuration
+aws_region  = "us-east-1"
+environment = "dev"
+
+# Project naming (resources will be named: ai-agent-dev-*)
+project_name = "ai-agent"
+
+# OpenSearch instance type
+# Options: t3.small.search (dev), t3.medium.search (prod)
+opensearch_instance_type = "t3.small.search"
+
+# CORS allowed origins
+# Use ["*"] for development, specific domains for production
+# Example: ["https://d1234567890.cloudfront.net", "https://yourdomain.com"]
+allowed_origins = ["*"]
+
+# OpenSearch service-linked role
+# - Set to TRUE for new AWS accounts (Terraform will create the role)
+# - Set to FALSE if you get "role already exists" error (role was created by another project)
+# The role is shared across all OpenSearch domains in the account
+create_opensearch_service_role = true
+
+# API Keys (required)
+# Get your Anthropic key: https://console.anthropic.com/settings/keys
+# Get your OpenAI key: https://platform.openai.com/api-keys
+
+anthropic_api_key = "sk-ant-..."
+openai_api_key    = "sk-proj-..."
+
+# Model Configuration (optional)
+# agent_model     = "claude-sonnet-4-20250514"  # Main agent model
+# embedding_model = "text-embedding-3-small"    # OpenAI embedding model
+# vision_model    = "gpt-4o"                    # Vision/OCR model
+
+# Lambda Configuration (optional)
+# lambda_memory_size = 1024  # MB (512-10240)
+# lambda_timeout     = 900   # seconds (max 900)
+
+# OpenSearch Dashboard Access
+# IP addresses allowed to access the OpenSearch Dashboard
+# Find your IP: https://whatismyip.com
+allowed_dashboard_ips = ["YOUR_IP/32"]  # e.g., ["203.0.113.50/32"]
+

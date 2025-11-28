@@ -1,0 +1,86 @@
+services:
+  # LocalStack - AWS services emulation (S3, DynamoDB)
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: ai-agent-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,dynamodb
+      - DEBUG=0
+      - PERSISTENCE=1
+      - AWS_DEFAULT_REGION=us-east-1
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - ./infra/localstack-init.sh:/etc/localstack/init/ready.d/init.sh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # S3 Browser UI - Web file manager for LocalStack S3
+  s3-browser:
+    image: cloudlena/s3manager
+    container_name: ai-agent-s3-browser
+    ports:
+      - "8080:8080"
+    environment:
+      - ACCESS_KEY_ID=test
+      - SECRET_ACCESS_KEY=test
+      - ENDPOINT=localstack:4566
+      - USE_SSL=false
+    depends_on:
+      localstack:
+        condition: service_healthy
+
+  # DynamoDB Admin UI - Web interface for LocalStack DynamoDB
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin
+    container_name: ai-agent-dynamodb-admin
+    ports:
+      - "8001:8001"
+    environment:
+      - DYNAMO_ENDPOINT=http://localstack:4566
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      localstack:
+        condition: service_healthy
+
+  # OpenSearch - Vector database
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: ai-agent-opensearch
+    environment:
+      - discovery.type=single-node
+      - plugins.security.disabled=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=admin
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # OpenSearch Dashboards - UI for OpenSearch
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.11.0
+    container_name: ai-agent-opensearch-dashboards
+    environment:
+      - OPENSEARCH_HOSTS=["http://opensearch:9200"]
+      - DISABLE_SECURITY_DASHBOARDS_PLUGIN=true
+    ports:
+      - "5601:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+
+volumes:
+  localstack-data:
+  opensearch-data:

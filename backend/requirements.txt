@@ -1,0 +1,41 @@
+# Web framework
+fastapi>=0.109.0
+uvicorn>=0.27.0
+mangum>=0.17.0  # FastAPI on Lambda
+
+# LLM clients
+anthropic>=0.30.0
+openai>=1.35.0
+
+# Agent framework
+langgraph>=0.2.0
+langchain-core>=0.2.0
+langchain-anthropic>=0.1.0
+
+# AWS (for S3, OpenSearch)
+boto3>=1.34.0
+opensearch-py>=2.4.0
+requests-aws4auth>=1.2.0
+
+# Utilities
+pydantic>=2.0.0
+simpleeval>=0.9.13
+ddgs>=6.0.0
+apscheduler>=3.10.0  # Job recovery scheduler (local dev)
+
+# Document processing
+pypdf>=4.0.0
+python-docx>=1.0.0
+pytesseract>=0.3.10
+pdf2image>=1.16.0
+Pillow>=10.0.0
+
+# SEC EDGAR filings download
+sec-edgar-downloader>=5.0.0
+markdownify>=0.11.0
+
+# Testing
+pytest>=8.0.0
+
+# TypeScript generation
+pydantic-to-typescript>=1.0.0
