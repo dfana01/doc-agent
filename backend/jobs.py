@@ -183,6 +183,28 @@ class DynamoDBJobStore:
                 return True
         
         return [self.get(item['id']) for item in response.get('Items', []) if is_stale(item)]
+    
+    def save_execution(self, job_id: str, execution_id: str, execution_data: dict) -> None:
+        """Save a code execution record associated with a job"""
+        self.table.update_item(
+            Key={'id': job_id},
+            UpdateExpression='SET code_executions = list_append(if_not_exists(code_executions, :empty), :execution)',
+            ExpressionAttributeValues={
+                ':empty': [],
+                ':execution': [_to_decimal({
+                    'id': execution_id,
+                    **execution_data,
+                    'created_at': datetime.utcnow().isoformat()
+                })]
+            }
+        )
+    
+    def get_executions(self, job_id: str) -> list[dict]:
+        """Get all code executions for a job"""
+        item = self.table.get_item(Key={'id': job_id}).get('Item')
+        if not item:
+            return []
+        return _from_decimal(item.get('code_executions', []))
 
 
 _job_store: DynamoDBJobStore | None = None

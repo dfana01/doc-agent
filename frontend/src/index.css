@@ -156,6 +156,48 @@
   .markdown-body del {
     @apply text-slate-500 line-through;
   }
+  
+  /* Rich HTML Output (from Python/Pandas) */
+  .rich-html-output {
+    @apply text-slate-900 text-sm;
+  }
+  
+  .rich-html-output table {
+    @apply w-full border-collapse text-xs;
+  }
+  
+  .rich-html-output thead {
+    @apply bg-slate-200;
+  }
+  
+  .rich-html-output th {
+    @apply border border-slate-300 px-3 py-2 text-left font-semibold text-slate-800 bg-slate-100;
+  }
+  
+  .rich-html-output td {
+    @apply border border-slate-300 px-3 py-1.5 text-slate-700;
+  }
+  
+  .rich-html-output tbody tr:hover {
+    @apply bg-blue-50;
+  }
+  
+  .rich-html-output tbody tr:nth-child(even) {
+    @apply bg-slate-50;
+  }
+  
+  /* Pandas DataFrame specific */
+  .rich-html-output .dataframe {
+    @apply text-xs;
+  }
+  
+  .rich-html-output .dataframe thead th {
+    @apply bg-gradient-to-b from-slate-100 to-slate-200 font-medium;
+  }
+  
+  .rich-html-output .dataframe td {
+    @apply font-mono;
+  }
 }
 
 @layer utilities {

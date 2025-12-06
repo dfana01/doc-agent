@@ -1,3 +1,5 @@
+import uuid
+import base64
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -5,11 +7,14 @@ from jobs import get_job_store, run_job_async
 from models import (
     AppConfig,
     AppInfo,
+    CodeExecutionOutput,
     CreateJobRequest,
     CreateJobResponse,
     HealthResponse,
     Job,
     MessagesConfig,
+    SaveExecutionRequest,
+    SaveExecutionResponse,
     ToolInfo,
     UploadConfig,
     UploadUrlRequest,
@@ -34,6 +39,7 @@ TOOL_ICONS = {
     "web_search": "🌐",
     "document_processing": "📄",
     "calculator": "🧮",
+    "generate_code": "🐍",
 }
 
 WELCOME_MESSAGE = """Hi! I'm your AI assistant. I can help you with:
@@ -44,9 +50,11 @@ WELCOME_MESSAGE = """Hi! I'm your AI assistant. I can help you with:
 
 - **Web Search** — Search the web for current information, news, or topics not in your documents.
 
-- **Calculator** — Perform calculations on data (sums, averages, percentages, etc).
+- **Calculator** — Perform basic calculations on data (sums, averages, percentages).
 
-Try asking me something like "What's in my documents?" or upload a file to get started!"""
+- **Code Execution** — Generate charts, export CSV/Excel files, run statistical analysis, and perform complex data transformations. Code runs securely in your browser.
+
+Try asking me something like "What's in my documents?" or "Create a chart of the revenue data" to get started!"""
 
 
 @app.get("/api/config", response_model=AppConfig)
@@ -137,3 +145,81 @@ async def get_view_url(request: ViewUrlRequest):
         return ViewUrlResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/jobs/{job_id}/executions", response_model=SaveExecutionResponse)
+async def save_execution(job_id: str, request: SaveExecutionRequest):
+    from s3 import upload_bytes
+    from config import get_config
+    
+    store = get_job_store()
+    job = store.get(job_id)
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    execution_id = str(uuid.uuid4())
+    config = get_config()
+    output_refs: list[CodeExecutionOutput] = []
+    chart_data_url: str | None = None
+    
+    for output in request.outputs:
+        output_type = output.get('type', 'file')
+        output_format = output.get('format', 'bin')
+        output_data = output.get('data', '')
+        filename = output.get('filename', f'output.{output_format}')
+        
+        if output_data:
+            try:
+                binary_data = base64.b64decode(output_data)
+                s3_key = f"executions/{job_id}/{execution_id}/{filename}"
+                upload_bytes(binary_data, s3_key, f"application/{output_format}")
+                output_refs.append(CodeExecutionOutput(
+                    type=output_type,
+                    format=output_format,
+                    s3_path=f"s3://{config.s3_bucket}/{s3_key}",
+                    filename=filename
+                ))
+            except Exception as e:
+                print(f"[WARN] Failed to upload output: {e}")
+    
+    if request.chart_data:
+        if len(request.chart_data) > 10000:  # >10KB, store in S3
+            s3_key = f"executions/{job_id}/{execution_id}/chart.json"
+            upload_bytes(request.chart_data.encode('utf-8'), s3_key, "application/json")
+            chart_data_url = f"s3://{config.s3_bucket}/{s3_key}"
+        else:
+            chart_data_url = request.chart_data  # Store inline
+    
+    execution_data = {
+        'code': request.code,
+        'explanation': request.explanation,
+        'success': request.success,
+        'result': request.result,
+        'stdout': request.stdout,
+        'error': request.error,
+        'outputs': [o.model_dump() for o in output_refs],
+        'chart_data_url': chart_data_url,
+        'table_data': request.table_data[:100] if request.table_data else None,  # Limit table data
+        'execution_time_ms': request.execution_time_ms
+    }
+    
+    store.save_execution(job_id, execution_id, execution_data)
+    
+    return SaveExecutionResponse(
+        id=execution_id,
+        job_id=job_id,
+        outputs=output_refs,
+        chart_data_url=chart_data_url
+    )
+
+
+@app.get("/api/jobs/{job_id}/executions")
+async def get_executions(job_id: str):
+    store = get_job_store()
+    job = store.get(job_id)
+    
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    return store.get_executions(job_id)

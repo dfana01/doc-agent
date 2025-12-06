@@ -175,7 +175,8 @@ class AgentRunner:
         self.messages = _build_messages(history, query)
         
         try:
-            for event in agent.stream({"messages": self.messages}):
+            config = {"recursion_limit": 50} 
+            for event in agent.stream({"messages": self.messages}, config=config):
                 if "agent" in event:
                     self.handle_agent_event(event["agent"])
                 if "tools" in event:

@@ -90,7 +90,37 @@ def calculator(expression: str) -> dict:
     return {"result": result, "expression": expression}
 
 
-AGENT_TOOLS = [search, web_search, document_processing, calculator]
+@tool
+def generate_code(task: str, data: dict, output_type: str = "calculation") -> dict:
+    """Generate Python code for advanced data analysis. Use for charts, visualizations, 
+    CSV/Excel exports, statistical analysis, or complex calculations beyond basic arithmetic.
+    Code executes in a secure sandbox in the user's browser.
+    
+    Args:
+        task: Description of what the code should accomplish
+        data: Data values to analyze (from search results, extracted numbers, etc.)
+        output_type: One of "chart", "file", "calculation", or "dataframe"
+    
+    Example tasks:
+        - "Create a bar chart showing revenue by quarter"
+        - "Export this data as a CSV file"
+        - "Calculate correlation between sales and marketing spend"
+        - "Create a pivot table grouped by region"
+    """
+    from llm import generate_python_code
+    
+    code = generate_python_code(task, data, output_type)
+    
+    return {
+        "code": code,
+        "data": data,
+        "output_type": output_type,
+        "requires_execution": True,
+        "explanation": f"Generated {output_type} code for: {task}"
+    }
+
+
+AGENT_TOOLS = [search, web_search, document_processing, calculator, generate_code]
 
 
 def system_health() -> dict:

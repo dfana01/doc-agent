@@ -84,3 +84,17 @@ def view_url(s3_path: str) -> dict:
         "filename": os.path.basename(key),
         "expires_in": 3600
     }
+
+
+def upload_bytes(data: bytes, key: str, content_type: str = "application/octet-stream") -> str:
+    config = get_config()
+    s3 = get_s3_client()
+    
+    s3.put_object(
+        Bucket=config.s3_bucket,
+        Key=key,
+        Body=data,
+        ContentType=content_type
+    )
+    
+    return f"s3://{config.s3_bucket}/{key}"
