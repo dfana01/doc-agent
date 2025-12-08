@@ -12,8 +12,9 @@ class Config:
     openai_api_key: str = ""
     
     agent_model: str = "claude-sonnet-4-20250514"
+    code_generation_model: str = "claude-sonnet-4-20250514"  # For Python code generation
     embedding_model: str = "text-embedding-3-small"
-    vision_model: str = "gpt-4o"
+    openai_model: str = "gpt-4o"  # Used for vision tasks
     
     aws_region: str = "us-east-1"
     
@@ -38,8 +39,9 @@ def get_config() -> Config:
         anthropic_api_key=get_env("ANTHROPIC_API_KEY"),
         openai_api_key=get_env("OPENAI_API_KEY"),
         agent_model=get_env("AGENT_MODEL", "claude-sonnet-4-20250514"),
+        code_generation_model=get_env("CODE_GENERATION_MODEL", "claude-sonnet-4-20250514"),
         embedding_model=get_env("EMBEDDING_MODEL", "text-embedding-3-small"),
-        vision_model=get_env("VISION_MODEL", "gpt-4o"),
+        openai_model=get_env("OPENAI_MODEL", "gpt-4o"),
         aws_region=get_env("AWS_REGION", "us-east-1"),
         opensearch_endpoint=get_env("OPENSEARCH_ENDPOINT"),
         opensearch_index=get_env("OPENSEARCH_INDEX", "documents"),

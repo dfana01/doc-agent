@@ -38,6 +38,59 @@ export interface CalculatorToolOutput {
   result: number;
   expression: string;
 }
+/**
+ * Reference to an output stored in S3
+ */
+export interface CodeExecutionOutput {
+  type: string;
+  format: string;
+  s3_path: string;
+  filename?: string | null;
+}
+/**
+ * Persisted code execution result
+ */
+export interface CodeExecutionRecord {
+  id: string;
+  job_id: string;
+  code: string;
+  explanation?: string;
+  success: boolean;
+  result?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | null;
+  stdout?: string;
+  error?: string | null;
+  outputs?: CodeExecutionOutput[];
+  chart_data_url?: string | null;
+  table_data?:
+    | {
+        [k: string]: unknown;
+      }[]
+    | null;
+  execution_time_ms?: number;
+  created_at: string;
+}
+export interface CodeGenerationResult {
+  code: string;
+  data: {
+    [k: string]: unknown;
+  };
+  output_type: string;
+  requires_execution?: boolean;
+  explanation: string;
+}
+export interface CodeOutput {
+  type: string;
+  format: string;
+  data: string;
+  filename?: string | null;
+}
 export interface CreateJobRequest {
   query: string;
   history?: {
@@ -55,6 +108,21 @@ export interface DocumentReference {
   score: number;
   text: string;
   chunk_index?: number | null;
+}
+export interface ExecutionResult {
+  success: boolean;
+  result?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | null;
+  stdout?: string;
+  error?: string | null;
+  outputs?: CodeOutput[];
+  execution_time_ms?: number;
 }
 export interface HealthResponse {
   status: string;
@@ -94,6 +162,43 @@ export interface ToolCall {
 export interface Message {
   role: string;
   content: string;
+}
+/**
+ * Request to save execution result
+ */
+export interface SaveExecutionRequest {
+  code: string;
+  explanation?: string;
+  success: boolean;
+  result?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | null;
+  stdout?: string;
+  error?: string | null;
+  outputs?: {
+    [k: string]: unknown;
+  }[];
+  chart_data?: string | null;
+  table_data?:
+    | {
+        [k: string]: unknown;
+      }[]
+    | null;
+  execution_time_ms?: number;
+}
+/**
+ * Response after saving execution
+ */
+export interface SaveExecutionResponse {
+  id: string;
+  job_id: string;
+  outputs?: CodeExecutionOutput[];
+  chart_data_url?: string | null;
 }
 export interface SearchToolOutput {
   query: string;

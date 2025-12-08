@@ -34,6 +34,24 @@ function ToolInput({ input }: { input?: Record<string, unknown> }) {
 function ToolOutput({ output }: { output?: Record<string, unknown> | null }) {
   if (!output) return null
   
+  // Handle code generation output - show summary and collapsible code
+  if (output.requires_execution && output.code) {
+    return (
+      <div className="space-y-2">
+        <p className="text-sm text-slate-300">{String(output.explanation || 'Code generated')}</p>
+        <p className="text-xs text-cyan-400">📊 Output shown in chat →</p>
+        <details className="text-xs">
+          <summary className="text-slate-500 cursor-pointer hover:text-slate-400">
+            View generated code
+          </summary>
+          <pre className="mt-2 p-2 bg-slate-900 rounded text-slate-400 overflow-x-auto max-h-40 overflow-y-auto">
+            {String(output.code)}
+          </pre>
+        </details>
+      </div>
+    )
+  }
+  
   if (output.message) {
     return <p className="text-sm text-slate-300">{String(output.message)}</p>
   }

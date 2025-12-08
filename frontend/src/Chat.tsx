@@ -3,6 +3,12 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Message, JobProgress, AppConfig } from './types'
 import { useUpload } from './api'
+import { CodeOutput } from './CodeOutput'
+
+interface PendingExecution {
+  code: string
+  explanation?: string
+}
 
 interface ChatProps {
   messages: Message[]
@@ -10,9 +16,17 @@ interface ChatProps {
   isLoading: boolean
   progress?: JobProgress | null
   config: AppConfig
+  pendingExecution?: PendingExecution | null
+  pyodideExecuting?: boolean
+  pyodideLoading?: boolean
+  pyodideProgress?: string
+  pyodideConsole?: string
 }
 
-export function Chat({ messages, onSend, isLoading, progress, config }: ChatProps) {
+export function Chat({ 
+  messages, onSend, isLoading, progress, config, 
+  pendingExecution, pyodideExecuting, pyodideLoading, pyodideProgress, pyodideConsole 
+}: ChatProps) {
   const [input, setInput] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -23,7 +37,7 @@ export function Chat({ messages, onSend, isLoading, progress, config }: ChatProp
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, pendingExecution, pyodideProgress, pyodideConsole])
 
   useEffect(() => {
     if (upload.isSuccess) {
@@ -58,7 +72,6 @@ export function Chat({ messages, onSend, isLoading, progress, config }: ChatProp
 
   return (
     <>
-      {/* Header */}
       <div className="px-5 py-4 border-b border-slate-800">
         <h2 className="font-semibold text-white flex items-center gap-2">
           <span className="text-lg">💬</span>
@@ -66,13 +79,27 @@ export function Chat({ messages, onSend, isLoading, progress, config }: ChatProp
         </h2>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto scrollbar-thin p-5 space-y-4">
         {messages.map((msg, i) => (
-          <div 
-            key={i} 
-            className={`flex animate-fade-in ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+          <div key={i} className="animate-fade-in">
+            {msg.role === 'code_execution' ? (
+              <div className="flex justify-start">
+                <div className="max-w-[95%] w-full">
+                  <CodeOutput
+                    isExecuting={false}
+                    outputs={msg.result.outputs}
+                    result={msg.result.result}
+                    stdout={msg.result.stdout}
+                    error={msg.result.error}
+                    code={msg.code}
+                    explanation={msg.explanation}
+                    chartData={msg.result.chartData}
+                    tableData={msg.result.tableData}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div 
               className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                 msg.role === 'user' 
@@ -84,6 +111,8 @@ export function Chat({ messages, onSend, isLoading, progress, config }: ChatProp
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
               </div>
             </div>
+              </div>
+            )}
           </div>
         ))}
         
@@ -114,17 +143,32 @@ export function Chat({ messages, onSend, isLoading, progress, config }: ChatProp
             </div>
           </div>
         )}
+        
+        {/* Currently running execution */}
+        {pendingExecution && (pyodideExecuting || pyodideLoading) && (
+          <div className="flex justify-start animate-fade-in">
+            <div className="max-w-[95%] w-full">
+              <CodeOutput
+                isExecuting={true}
+                outputs={[]}
+                code={pendingExecution.code}
+                explanation={pendingExecution.explanation}
+                progress={pyodideProgress}
+                consoleOutput={pyodideConsole}
+              />
+            </div>
+          </div>
+        )}
+        
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Upload Error */}
       {upload.error && (
         <div className="mx-5 mb-2 px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg animate-fade-in">
           {upload.error.message}
         </div>
       )}
 
-      {/* Input Form */}
       <form onSubmit={handleSubmit} className="p-4 border-t border-slate-800">
         <div className="flex items-end gap-3">
           <input

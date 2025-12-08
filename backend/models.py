@@ -145,3 +145,70 @@ class HealthResponse(BaseModel):
     services: list[dict]
     timestamp: str
 
+
+class CodeOutput(BaseModel):
+    type: str  # "image" | "file" | "dataframe"
+    format: str  # "png" | "csv" | "xlsx" | "json"
+    data: str  # base64 encoded
+    filename: str | None = None
+
+
+class CodeGenerationResult(BaseModel):
+    code: str
+    data: dict
+    output_type: str  # "chart" | "file" | "calculation" | "dataframe"
+    requires_execution: bool = True
+    explanation: str
+
+
+class ExecutionResult(BaseModel):
+    success: bool
+    result: dict | list | str | int | float | None = None
+    stdout: str = ""
+    error: str | None = None
+    outputs: list[CodeOutput] = Field(default_factory=list)
+    execution_time_ms: int = 0
+
+
+class CodeExecutionOutput(BaseModel):
+    type: str  # "chart" | "image" | "file"
+    format: str
+    s3_path: str  # S3 path for binary data
+    filename: str | None = None
+
+
+class CodeExecutionRecord(BaseModel):
+    id: str
+    job_id: str
+    code: str
+    explanation: str = ""
+    success: bool
+    result: dict | list | str | int | float | None = None
+    stdout: str = ""
+    error: str | None = None
+    outputs: list[CodeExecutionOutput] = Field(default_factory=list)
+    chart_data_url: str | None = None  # S3 path for Plotly JSON
+    table_data: list[dict] | None = None  # Small table data inline, large in S3
+    execution_time_ms: int = 0
+    created_at: str
+
+
+class SaveExecutionRequest(BaseModel):
+    code: str
+    explanation: str = ""
+    success: bool
+    result: dict | list | str | int | float | None = None
+    stdout: str = ""
+    error: str | None = None
+    outputs: list[dict] = Field(default_factory=list)  # Raw output data with base64
+    chart_data: str | None = None  # Plotly JSON string
+    table_data: list[dict] | None = None
+    execution_time_ms: int = 0
+
+
+class SaveExecutionResponse(BaseModel):
+    id: str
+    job_id: str
+    outputs: list[CodeExecutionOutput] = Field(default_factory=list)
+    chart_data_url: str | None = None
+
